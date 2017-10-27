@@ -1,0 +1,261 @@
+/* File: TermFrequencyTable.java
+ * Author: Jessica McAloon (mcaloonj@bu.edu)
+ * Class: CS 112, Spring 2015
+ * Purpose: Solution to HW10, Problem B.3
+ */
+
+public class TermFrequencyTable{
+  
+  private class Node{
+    
+    String term;
+    int[] termFreq = new int[2]; 
+    Node next;
+    Node next2;
+    
+    Node (String term, Node n){
+      this.term = term;
+      this.next = n;
+      this.next2 = null;
+    }
+    
+    Node (String term){
+      this.term = term;
+      this.next = null;
+      this.next2 = null;
+    }
+  }
+  
+  private final int M = 101;
+  
+  
+  Node [] T = new Node[M];
+  
+  Node head = null;
+  
+  
+  //initialize inserts a string array into the table, useful for debugging
+  public void initialize(String [] A, int docNum) {
+    for(int i = 0; i < A.length; ++i) 
+      insert(A[i], docNum); 
+  }
+  
+  // makes an array of string terms from a string so that they can be inserted
+  public String [] makeTermList (String doc){
+    String lower_case = doc.toLowerCase();
+    String [] S = lower_case.split(" ");
+    return S;
+  }
+  
+  
+  public void insert(String term, int docNum) {
+    boolean was_member = member(term);   //checks if term was already in table before this insertion
+    T[hash(term)] = insertHelper(term, T[hash(term)], docNum);
+    
+    if (!was_member){  //if term wasn't already in table, insert it at the front of the master list
+      Node temp = head;
+      head = new Node (term, head);
+      head.termFreq[docNum] = 1; 
+      head.next2 = temp;
+    }
+    else{     //if it was in the table, just increase its termFreq in the master list
+      Node q;
+      for (q = head; q != null; q = q.next){
+        if (q.term.compareTo(term) == 0)
+          ++q.termFreq[docNum];
+      }
+    }
+  }
+      
+  
+  private Node insertHelper(String term, Node p, int docNum){
+    if (p == null){  //if it hashes to an empty node, create a new node with the term 
+      p = new Node(term);
+      p.termFreq[docNum] = 1;
+      return p;
+    }
+    else{           //if it hashes to a non-empty node
+      Node q;
+      for (q = p; q != null; q = q.next){
+        if (q.term.compareTo(term) == 0){ // if term is already in the LL, just increase its termFreq
+          ++q.termFreq[docNum];
+          return p;
+        }
+        else if (q.next == null){  // otherwise, insert term at end of LL
+          q.next = new Node(term);
+          q.termFreq[docNum] = 1;
+          return p;
+        }
+        
+      }
+    }
+    return p;
+  }
+  
+  Node pointer = head; // pointer to master list
+  
+  private int length(Node p){
+    int count = 0;
+    for (Node q = p; q != null; q = q.next)
+      ++ count;
+    return count;
+  }
+  
+  private int [] makeVector(Node p, int docNum){
+    int [] freq_list = new int [length(head)]; // vector is the same length as head
+    int i = 0;
+    for (Node q = p; q != null; q = q.next){ // iterate through master list, add each termFreq to the vector
+      freq_list[i] = q.termFreq[docNum];
+      ++ i;
+    }
+    return freq_list;
+  }
+  
+  double cosineSimilarity(){
+    int [] A = makeVector(head, 0); // make termFreq vector of document 0 
+    int [] B = makeVector(head, 1); // make termFreq vector of document 1
+    double result = dot(A,B)/((Math.sqrt(dot(A,A)))*(Math.sqrt(dot(B,B)))); //calculate cosine similarity of vectors
+    return result;
+  }
+  
+  private double dot(int [] A, int [] B){ //calculates dot product
+    double sum = 0;
+    for (int i = 0; i < A.length; ++ i){ //iterates through 2 vectors, takes the product of 2 indexes, adds it to running sum
+      double product = A[i]*B[i];
+      sum += product;
+    }
+    return sum;        
+  }
+  
+ 
+  public String lookup(String term) {
+    return lookupHelper (term, T[hash(term)]);
+    
+  }
+  
+  private String lookupHelper(String term, Node t) {
+    if (t == null)
+      return null;
+    for (Node p = t; p != null;p = p.next){ // returns term if it finds it
+      if (p.term.compareTo(term) == 0)
+        return p.term;
+    }
+    return null;                        // otherwise, returns null
+  }
+  
+  public boolean member (String title){  // returns true if string is in table, returns false otherwise
+    return (lookup(title) != null);
+  }
+  
+  private int hash (String term){ // hash function takes sum of chars in a string and applies % M to it
+    char ch[];
+    ch = term.toCharArray();
+    int titlelength = term.length();
+    
+    int i, sum;
+    for (sum=0, i=0; i < term.length(); i++)
+      sum += ch[i];
+    return sum % M;
+  }
+ 
+  
+  //iterator methods for debugging.  Prints out the contents of the master list using next2 pointer
+   public void reset(){
+    pointer = head;
+  }
+  
+  public boolean hasNext(){
+    return (pointer != null);
+  }
+  
+  public String next(){
+    Node q = pointer;
+    pointer = pointer.next2;
+    return q.term;
+  }
+  
+  private final String [] blackList = { "the", "of", "and", "a", "to", "in", "is", 
+    "you", "that", "it", "he", "was", "for", "on", "are", "as", "with", 
+    "his", "they", "i", "at", "be", "this", "have", "from", "or", "one", 
+    "had", "by", "word", "but", "not", "what", "all", "were", "we", "when", 
+    "your", "can", "said", "there", "use", "an", "each", "which", "she", 
+    "do", "how", "their", "if", "will", "up", "other", "about", "out", "many", 
+    "then", "them", "these", "so", "some", "her", "would", "make", "like", 
+    "him", "into", "time", "has", "look", "two", "more", "write", "go", "see", 
+    "number", "no", "way", "could", "people",  "my", "than", "first", "water", 
+    "been", "call", "who", "oil", "its", "now", "find", "long", "down", "day", 
+    "did", "get", "come", "made", "may", "part" };
+    
+  
+  public static void main (String [] args){
+    TermFrequencyTable Table = new TermFrequencyTable();
+    String [] A = Table.makeTermList("A B");
+    
+    String [] B = Table.makeTermList("A A B B");
+ 
+    System.out.println("Testing Insert, should be:");
+    System.out.println("Location 97: a [1, 2]\nLocation 98: b [1, 2]\n");
+    Table.initialize(A,0);
+    Table.initialize(B,1);
+    Node [] list = Table.T;
+    for (int i = 0; i < list.length; ++i){
+      if (list[i] != null){
+        for (Node p = list[i]; p != null; p = p.next){
+          System.out.println( "Location " + Table.hash(p.term)+": "+ p.term +" ["+ p.termFreq[0] +", "+p.termFreq[1] +"]");
+      }
+    }
+    }
+    
+    System.out.println();
+    System.out.println("Testing iterator and next2 pointer, should be:");
+    System.out.println("b a");
+    Table.reset();
+    while(Table.hasNext()) {
+      String s = Table.next(); 
+      System.out.print(s + " ");
+    }
+    
+    System.out.println();
+    System.out.println();
+    
+    System.out.println("Testing cosine similarity of \"A B\" and \"A A B B\", shoud be about 1.0:"); 
+    System.out.println(Table.cosineSimilarity());
+    System.out.println();
+    
+    TermFrequencyTable Table2 = new TermFrequencyTable();
+    
+    String [] C = Table2.makeTermList("A B"); 
+    String [] D = Table2.makeTermList("C D");
+    
+    Table2.initialize(C,0);
+    Table2.initialize(D,1);
+  
+    System.out.println("Testing cosine similarity of \"A B\" and \"C D\", shoud be 0.0:"); 
+    System.out.println(Table2.cosineSimilarity());
+    System.out.println();
+    
+    
+    TermFrequencyTable Table3 = new TermFrequencyTable();
+    
+    String [] E = Table3.makeTermList("CS112 HW10"); 
+    String [] F = Table3.makeTermList("CS112 HW10 HW10");
+    
+    Table3.initialize(E,0);
+    Table3.initialize(F,1);
+    
+    System.out.println("Testing cosine similarity of \"CS112 HW10\" and \"CS112 HW10 HW10\", shoud be 0.9487:"); 
+    System.out.println(Table3.cosineSimilarity());
+    
+    
+    
+
+   
+
+}
+}
+
+
+
+
+
+      
