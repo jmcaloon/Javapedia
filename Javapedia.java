@@ -143,7 +143,7 @@ public class Javapedia {
     t = preprocess(t);
     String [] S = s.split(" "); // turn both strings into array, splitting on whitespace
     String [] T_list = t.split(" ");
-    TermFrequencyTable X = new TermFrequencyTable();
+    WordFrequencyTable X = new WordFrequencyTable();
     for (int i = 0; i < S.length; ++ i){  // insert word into table if it isn't blacklisted
       if (!blacklisted(S[i]))
         X.insert(S[i], 0);
